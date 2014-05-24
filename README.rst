@@ -94,7 +94,7 @@ Parents             Small-Molecule-Reactions, TR-12
 
 
 ==================  ======================================================================
-Name                NADP:sup:`+` L-lactaldehyde dehydrogenase
+Name                NADP :sup:`+` L-lactaldehyde dehydrogenase
 BioCyc ID           `RXN-12165 <http://www.biocyc.org/META/NEW-IMAGE?object=RXN-12165>`__
 Org ID              META
 Parents             Chemical-Reactions, Small-Molecule-Reactions
