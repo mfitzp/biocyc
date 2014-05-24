@@ -27,6 +27,7 @@ would be very confusing indeed).
     from biocyc import biocyc
     os.environ['http_proxy'] = '' # Set your proxy if neccessary
     biocyc.set_organism('meta')
+
 Making a request
 ----------------
 
@@ -43,9 +44,18 @@ BioCyc database and other database annotations.
 
 
 
-.. raw:: html
-
-    <table><tr><th>Name</th><td>(<i>S</i>)-lactate</td></tr><tr><th>BioCyc ID</th><td><a href="http://www.biocyc.org/META/NEW-IMAGE?object=L-LACTATE">L-LACTATE</a></td></tr><tr><th>Org ID</th><td>META</td></tr><tr><th>Synonyms</th><td>L-lactate, L(+)-lactate</td></tr><tr><th>INCHI</th><td>InChI=1S/C3H6O3/c1-2(4)3(5)6/h2,4H,1H3,(H,5,6)/p-1/t2-/m0/s1</td></tr><tr><th>Molecular weight</th><td>89.071</td></tr><tr><th>Gibbs 0</th><td>-72.55646</td></tr><tr><th>Parents</th><td>L-2-hydroxyacids, Lactate</td></tr><tr><th>Reactions</th><td>TRANS-RXN-104, RXN-12165, RXN-12096, LACTALDDEHYDROG-RXN, RXN0-5269, D-LACTATE-2-SULFATASE-RXN, TRANS-RXN-104, L-LACTDEHYDROGFMN-RXN, LACTATE-MALATE-TRANSHYDROGENASE-RXN, LACTATE-2-MONOOXYGENASE-RXN, L-LACTATE-DEHYDROGENASE-CYTOCHROME-RXN, L-LACTATE-DEHYDROGENASE-RXN, RXN-9067, RXN-8076, PROPIONLACT-RXN, LACTATE-RACEMASE-RXN, LACTATE-ALDOLASE-RXN</td></tr><tr><th>Database links</th><td>CAS: <a href="http://www.commonchemistry.org/ChemicalDetail.aspx?ref=79-33-4">79-33-4</a>, PUBCHEM: <a href="http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=5460161">5460161</a>, LIGAND-CPD: <a href="http://www.genome.ad.jp/dbget-bin/www_bget?C00186">C00186</a>, CHEMSPIDER: <a href="http://www.chemspider.com/4573803">4573803</a>, CHEBI: <a href="http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:16651">16651</a>, BIGG: 34179</td></tr></table>
+==================  ===============================================================================================================================================================================================================================================================================================================================================================================================================
+Name                (<i>S</i>)-lactate
+BioCyc ID           `L-LACTATE <http://www.biocyc.org/META/NEW-IMAGE?object=L-LACTATE>`__
+Org ID              META
+Synonyms            L-lactate, L(+)-lactate
+INCHI               InChI=1S/C3H6O3/c1-2(4)3(5)6/h2,4H,1H3,(H,5,6)/p-1/t2-/m0/s1
+Molecular weight    89.071
+Gibbs 0             -72.55646
+Parents             L-2-hydroxyacids, Lactate
+Reactions           TRANS-RXN-104, RXN-12165, RXN-12096, LACTALDDEHYDROG-RXN, RXN0-5269, D-LACTATE-2-SULFATASE-RXN, TRANS-RXN-104, L-LACTDEHYDROGFMN-RXN, LACTATE-MALATE-TRANSHYDROGENASE-RXN, LACTATE-2-MONOOXYGENASE-RXN, L-LACTATE-DEHYDROGENASE-CYTOCHROME-RXN, L-LACTATE-DEHYDROGENASE-RXN, RXN-9067, RXN-8076, PROPIONLACT-RXN, LACTATE-RACEMASE-RXN, LACTATE-ALDOLASE-RXN
+Database links      CAS: `79-33-4 <http://www.commonchemistry.org/ChemicalDetail.aspx?ref=79-33-4>`__, PUBCHEM: `5460161 <http://pubchem.ncbi.nlm.nih.gov/summary/summary.cgi?cid=5460161>`__, LIGAND-CPD: `C00186 <http://www.genome.ad.jp/dbget-bin/www_bget?C00186>`__, CHEMSPIDER: `4573803 <http://www.chemspider.com/4573803>`__, CHEBI: `16651 <http://www.ebi.ac.uk/chebi/searchId.do?chebiId=CHEBI:16651>`__, BIGG: 34179
+==================  ===============================================================================================================================================================================================================================================================================================================================================================================================================
 
 
 
@@ -70,11 +80,11 @@ multiple machines.
     r[0]
 
 
-
-.. raw:: html
-
-    <table><tr><th>BioCyc ID</th><td><a href="http://www.biocyc.org/META/NEW-IMAGE?object=TRANS-RXN-104">TRANS-RXN-104</a></td></tr><tr><th>Org ID</th><td>META</td></tr><tr><th>Parents</th><td>Small-Molecule-Reactions, TR-12</td></tr></table>
-
+==================  ==============================================================================
+BioCyc ID           `TRANS-RXN-104 <http://www.biocyc.org/META/NEW-IMAGE?object=TRANS-RXN-104>`__
+Org ID              META
+Parents             Small-Molecule-Reactions, TR-12
+==================  ==============================================================================
 
 
 .. code:: python
@@ -83,10 +93,13 @@ multiple machines.
 
 
 
-.. raw:: html
-
-    <table><tr><th>Name</th><td>NADP<sup>+</sup> L-lactaldehyde dehydrogenase</td></tr><tr><th>BioCyc ID</th><td><a href="http://www.biocyc.org/META/NEW-IMAGE?object=RXN-12165">RXN-12165</a></td></tr><tr><th>Org ID</th><td>META</td></tr><tr><th>Parents</th><td>Chemical-Reactions, Small-Molecule-Reactions</td></tr><tr><th>Pathways</th><td>PWY-6713</td></tr></table>
-
+==================  ======================================================================
+Name                NADP<sup>+</sup> L-lactaldehyde dehydrogenase
+BioCyc ID           `RXN-12165 <http://www.biocyc.org/META/NEW-IMAGE?object=RXN-12165>`__
+Org ID              META
+Parents             Chemical-Reactions, Small-Molecule-Reactions
+Pathways            PWY-6713
+==================  ======================================================================
 
 
 You can access sub-entities and manipulate objects using standard Python
@@ -123,10 +136,15 @@ list processing.
     p[0]
 
 
-
-.. raw:: html
-
-    <table><tr><th>Name</th><td>L-rhamnose degradation II</td></tr><tr><th>BioCyc ID</th><td><a href="http://www.biocyc.org/META/NEW-IMAGE?object=PWY-6713">PWY-6713</a></td></tr><tr><th>Org ID</th><td>META</td></tr><tr><th>Synonyms</th><td>aldolase pathway</td></tr><tr><th>Parents</th><td>L-rhamnose-Degradation</td></tr><tr><th>Species</th><td>TAX-5580, ORG-6176, TAX-95486, TAX-284592, TAX-322104</td></tr><tr><th>Taxonomic range</th><td>TAX-2, TAX-4751</td></tr></table>
+==================  ====================================================================
+Name                L-rhamnose degradation II
+BioCyc ID           `PWY-6713 <http://www.biocyc.org/META/NEW-IMAGE?object=PWY-6713>`__
+Org ID              META
+Synonyms            aldolase pathway
+Parents             L-rhamnose-Degradation
+Species             TAX-5580, ORG-6176, TAX-95486, TAX-284592, TAX-322104
+Taxonomic range     TAX-2, TAX-4751
+==================  ====================================================================
 
 
 
