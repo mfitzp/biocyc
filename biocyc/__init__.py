@@ -1,2 +1,2 @@
-from biocyc import biocyc
+from .biocyc import biocyc
 
