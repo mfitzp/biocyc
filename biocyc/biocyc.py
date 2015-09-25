@@ -110,6 +110,9 @@ def to_plain_text(str):
     str = strip_tags_re.sub('', str)
     str = strip_entities_re.sub('', str)
     return str
+    
+clean = lambda l: [i for i in l if i]    
+    
 
 class BioCyc(object):
     __metaclass__ = Singleton
@@ -308,7 +311,7 @@ class BioCyc(object):
         else:
             raise BioCycInvalidExpiry
         
-    def requestxml(self, url):
+    def requestxml(self, url, params):
     
         # Wait so we don't hammer server
         if self._hammer_lock is not None:
@@ -319,7 +322,7 @@ class BioCyc(object):
 
         self._hammer_lock = datetime.now()
             
-        r = requests.get(url)
+        r = requests.get(url, params=params)
         if r.status_code == 200:
             # Parse and return the XML
             return et.fromstring(r.text)
@@ -327,10 +330,10 @@ class BioCyc(object):
             return False
 
     def request_api(self, func, org_id, obj):
-        return self.requestxml( 'http://websvc.biocyc.org/apixml?fn=%s&id=%s:%s&detail=%s' % (func, org_id, obj, self.detail) )
+        return self.requestxml( 'http://websvc.biocyc.org/apixml', {'fn': func, 'id': '%s:%s' % (org_id, obj), 'detail': self.detail } )
 
     def request_obj(self, org_id, obj):
-        return self.requestxml( 'http://websvc.biocyc.org/getxml?id=%s:%s&detail=%s' % (org_id, obj, self.detail) )
+        return self.requestxml( 'http://websvc.biocyc.org/getxml', {'id': '%s:%s' % (org_id, obj), 'detail': self.detail } )
 
     def get_from_cache(self, org_id, id):
         '''
@@ -750,7 +753,7 @@ class Pathway(BioCycEntityBase):
 
     @property
     def compounds(self):
-        return [c for r in self.reactions for c in r.compounds]
+        return [c for r in clean(self.reactions) for c in clean(r.compounds)]
 
     @property
     def reactions(self):
@@ -815,7 +818,7 @@ class Reaction(BioCycEntityBase):
 
     @property
     def enzymes(self):
-        return [er.enzyme for er in self.enzymatic_reactions]
+        return clean([er.enzyme for er in clean(self.enzymatic_reactions)])
 
     @property
     def pathways(self):
@@ -909,7 +912,7 @@ class Protein(BioCycEntityBase):
         
     @property
     def genes(self): # Including subunits
-        genes = [c.gene for c in self.components if c.gene is not None]
+        genes = [c.gene for c in clean(self.components)]
         if self.gene is not None:
             genes += [self.gene]
         return genes
@@ -951,15 +954,15 @@ class Protein(BioCycEntityBase):
 
     @property
     def reactions(self):
-        return [er.reaction for er in self.catalyzes]
+        return [er.reaction for er in clean(self.catalyzes)]
     
     @property
     def pathways(self):
-        pathway_lists = [er.reaction.pathways for er in self.catalyzes]
+        pathway_lists = [er.reaction.pathways for er in clean(self.catalyzes)]
 
         # In case we're a subunit
         for c in self.complexes:
-            pathway_lists += [er.reaction.pathways for er in c.catalyzes]
+            pathway_lists += [er.reaction.pathways for er in clean(c.catalyzes)]
         return [p for pl in pathway_lists for p in pl]
 
     def _import_enzymatic_reactions(self, xml):
