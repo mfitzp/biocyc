@@ -22,7 +22,7 @@ import logging
 import re
 
 from datetime import datetime, timedelta
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 
 try:
     import xml.etree.cElementTree as et
@@ -123,6 +123,8 @@ class BioCyc(object):
     def __init__(self):
         self.secondary_cache_paths = [] # Not yet implemented
         self.cache_path = os.path.join( os.path.expanduser('~'), '.biocyc' )
+        self.memory_cache = defaultdict( OrderedDict )
+        self.max_memory_cache = 50000
 
         self.set_detail(DETAIL_FULL)
         self.set_organism('HUMAN')
@@ -134,17 +136,17 @@ class BioCyc(object):
             return self._locals[table]
         else:
             lt = []
-            try:
-                with open( os.path.join( self.cache_path, self.org_id, table), 'rU') as f:
-                    reader = csv.reader(f)
-                    for row in reader:
-                        lt.append( self.get(row[0]) )
-            except:
-                return []
+            for cache_path in [self.cache_path] + self.secondary_cache_paths:
+                try:
+                    with open( os.path.join( cache_path, self.org_id, table), 'rU') as f:
+                        reader = csv.reader(f)
+                        for row in reader:
+                            lt.append( self.get(row[0]) )
+                except:
+                    continue
 
-            else:
-                self._locals[table] = lt
-                return lt
+            self._locals[table] = lt
+            return lt
                 
     @property
     def known_pathways(self):
@@ -169,18 +171,16 @@ class BioCyc(object):
     def _get_by_name(self, table, n):
         if table not in self._synonyms:
             nt = {}
-            try:
-                with open( os.path.join( self.cache_path, self.org_id, table + '-synonyms'), 'rU') as f:
-                    reader = csv.reader(f)
-                    for row in reader:
-                        nt[ row[1] ] = self.get(row[0])
-            except Exception as e:
-                logging.info(e)
-                return None
+            for cache_path in [self.cache_path] + self.secondary_cache_paths:
+                try:
+                    with open( os.path.join( cache_path, self.org_id, table + '-synonyms'), 'rU') as f:
+                        reader = csv.reader(f)
+                        for row in reader:
+                            nt[ row[1] ] = self.get(row[0])
+                except:
+                    continue
                 
-            else:
-                self._synonyms[table] = nt
-
+            self._synonyms[table] = nt
 
         if n in self._synonyms[table]:
             return self._synonyms[table][n]
@@ -206,7 +206,7 @@ class BioCyc(object):
     def find_by_name(self,n ):
         for t in ['pathways', 'genes', 'reactions', 'compounds', 'proteins']:
             o  =  self._get_by_name(t, n)
-            if o:
+            if o is not None:
                 break
         return o
         
@@ -343,6 +343,12 @@ class BioCyc(object):
         '''
         current_time = datetime.now()
         
+        # Check memory cache first
+        if id in self.memory_cache[org_id]:
+            obj = self.memory_cache[org_id][id]
+            if obj.created_at > current_time - self.expire_records_after:
+                return obj
+        
         for cache in [self.cache_path] + self.secondary_cache_paths:
             read_path = os.path.join( cache, org_id, id )
             try:
@@ -357,6 +363,11 @@ class BioCyc(object):
                 # It worked so we have obj
                 # Check for expiry date; if it's not expired return it else continue
                 if obj.created_at > current_time - self.expire_records_after:
+                    # If we're here it mustn't be in the memory cache
+                    self.memory_cache[org_id][id] = obj
+                    if len(self.memory_cache[org_id]) > self.max_memory_cache:
+                        self.memory_cache[org_id].popitem(last=False)
+
                     return obj
                     
                 # Else continue looking
@@ -521,7 +532,7 @@ class BioCycEntityBase(object):
         return "<table>" + ''.join(rows) + "</table>"
 
     def __eq__(self, other):
-        return self.type == other.type and self.id == other.id
+        return type(other) == type(self) and self.type == other.type and self.id == other.id
 
     def __hash__(self):
         return hash( (self.type, self.id) )
@@ -706,18 +717,36 @@ class Pathway(BioCycEntityBase):
     localstore = 'pathways'
 
     def __init__(self, *args, **kwargs):
+        self._parent = None
         self._reactions = []
         self._species = []
         self._super_pathways = []
+        self._instances = []
+        self._subclasses = []
         self._taxonomic_range = []
         super(Pathway, self).__init__(*args, **kwargs)
 
     def import_from_xml(self, xml):
         super(Pathway, self).import_from_xml(xml)
+        self._import_parent(xml)
+        self._import_instances(xml)
+        self._import_subclasses(xml)
         self._import_reaction_list(xml)
         self._import_species(xml)
         self._import_super_pathways(xml)
         self._import_taxonomic_range(xml)
+
+    @property
+    def parent(self):
+        return biocyc.get_for_org( self.org_id, self._parent )
+
+    @property
+    def instances(self):
+        return biocyc.get_for_org( self.org_id, self._instances )
+
+    @property
+    def subclasses(self):
+        return biocyc.get_for_org( self.org_id, self._subclasses )
 
     @property
     def compounds(self):
@@ -738,6 +767,15 @@ class Pathway(BioCycEntityBase):
     @property
     def taxonomic_range(self):
         return biocyc.get_for_org( self.org_id, self._taxonomic_range )
+
+    def _import_parent(self, xml):
+        self._set_id_from_xml_frameid(xml, 'parent/Pathway', '_parent')
+
+    def _import_instances(self, xml):
+        self._set_list_ids_from_xml_iter(xml, 'instance/Pathway', '_instances')
+
+    def _import_subclasses(self, xml):
+        self._set_list_ids_from_xml_iter(xml, 'subclass/Pathway', '_subclasses')
 
 
 class Reaction(BioCycEntityBase):
@@ -844,24 +882,50 @@ class Protein(BioCycEntityBase):
     localstore = 'proteins'
 
     def __init__(self, *args, **kwargs):
+        self._parent = None
         self._gene = None
+        self._location = None
         self._components = [] # Subunits
+        self._complexes = [] # Subunits of
         self._catalyzes = []
         self.component_coefficient = None
         super(Protein, self).__init__(*args, **kwargs)
 
     def import_from_xml(self, xml):
         super(Protein, self).import_from_xml(xml)
+        self._import_parent(xml)
         self._import_gene(xml)
         self._import_components(xml)
+        self._import_complexes(xml)
         self._import_enzymatic_reactions(xml)
+
+    @property
+    def parent(self):
+        return biocyc.get_for_org( self.org_id, self._parent )
         
     @property
     def gene(self):
         return biocyc.get_for_org( self.org_id, self._gene )
+        
+    @property
+    def genes(self): # Including subunits
+        genes = [c.gene for c in self.components if c.gene is not None]
+        if self.gene is not None:
+            genes += [self.gene]
+        return genes
+        
+    @property
+    def location(self):
+        return biocyc.get_for_org( self.org_id, self._location )
     
     def _import_gene(self, xml):
         self._set_id_from_xml_frameid(xml, 'gene/Gene', '_gene')
+
+    def _import_location(self, xml):
+        self._set_id_from_xml_frameid(xml, 'location/cco', '_location')
+
+    def _import_parent(self, xml):
+        self._set_id_from_xml_frameid(xml, 'parent/Protein', '_parent')
 
     @property
     def components(self):
@@ -870,6 +934,16 @@ class Protein(BioCycEntityBase):
     def _import_components(self, xml):
         self._set_list_ids_from_xml_iter(xml, 'component/Protein', '_components')
         self._set_var_from_xml_text( xml, 'component/coefficient', 'component_coeffecient') 
+
+    @property
+    def complexes(self):
+        if hasattr(self, '_complexes'):
+            return biocyc.get_for_org( self.org_id, self._complexes )
+        else:
+            return []
+
+    def _import_complexes(self, xml):
+        self._set_list_ids_from_xml_iter(xml, 'component-of/Protein', '_complexes')
 
     @property
     def catalyzes(self):
@@ -882,6 +956,10 @@ class Protein(BioCycEntityBase):
     @property
     def pathways(self):
         pathway_lists = [er.reaction.pathways for er in self.catalyzes]
+
+        # In case we're a subunit
+        for c in self.complexes:
+            pathway_lists += [er.reaction.pathways for er in c.catalyzes]
         return [p for pl in pathway_lists for p in pl]
 
     def _import_enzymatic_reactions(self, xml):
@@ -890,6 +968,30 @@ class Protein(BioCycEntityBase):
 class Gene(BioCycEntityBase):
     xml_schema_id = 'Gene'
     localstore = 'genes'
+
+    def __init__(self, *args, **kwargs):
+        self._protein = None
+        super(Gene, self).__init__(*args, **kwargs)
+
+    def import_from_xml(self, xml):
+        super(Gene, self).import_from_xml(xml)
+        self._import_protein(xml)
+
+    def _import_protein(self, xml):
+        self._set_id_from_xml_frameid(xml, 'product/Protein', '_protein')
+        
+    @property
+    def protein(self):
+        return biocyc.get_for_org( self.org_id, self._protein )
+
+    @property
+    def reactions(self):
+        return self.protein.reactions
+
+    @property
+    def pathways(self):
+        return self.protein.pathways
+
 
 class DNABindingSite(BioCycEntityBase):
     pass
@@ -926,4 +1028,3 @@ class Chromosome(BioCycEntityBase):
 AVAILABLE_OBJECT_TYPES = [Compound, Pathway, Reaction, Protein, Gene, DNABindingSite, \
 EnzymaticReaction, Organism, Polypeptides, Promoter, Complex, ProteinFeature, \
 TranscriptionUnit, tRNA, Regulation]
-
