@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='biocyc',
-    version='0.1.9',
+    version='0.2.0',
     author='Martin Fitzpatrick',
     author_email='martin.fitzpatrick@gmail.com',
     packages=['biocyc'],
