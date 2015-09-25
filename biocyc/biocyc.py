@@ -352,7 +352,7 @@ class BioCyc(object):
         for cache in [self.cache_path] + self.secondary_cache_paths:
             read_path = os.path.join( cache, org_id, id )
             try:
-                with open(read_path, 'r') as f:
+                with open(read_path, 'rb') as f:
                     obj = pickle.load(f)
 
             except:
@@ -385,7 +385,7 @@ class BioCyc(object):
         if not os.path.exists( write_path ): 
             mkdir_p( write_path )
 
-        with open(os.path.join( write_path, obj.id ), 'w') as f:
+        with open(os.path.join( write_path, obj.id ), 'wb') as f:
             pickle.dump( obj, f )
         
         # Add to localstore (keep track of numbers of objects, etc.)
